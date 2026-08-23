@@ -1,26 +1,103 @@
-import {get,all} from "./demo.js";
-import {score} from "./engine.js";
+import {getDemo, allDemoTickers} from "./demo.js";
+import {analyzeDetailed} from "./engine.js";
 import {getKRXQuote} from "./providers/krx.js";
 import {getDARTFundamentals} from "./providers/dart.js";
 
-const J=(x,s=200)=>new Response(JSON.stringify(x),{status:s,headers:{"content-type":"application/json;charset=UTF-8","cache-control":"no-store"}});
-async function analyze(t,env){
- const d=get(t);
- if(env.APP_MODE==="live"&&env.KRX_API_KEY&&env.DART_API_KEY){
-   const [q,f]=await Promise.all([getKRXQuote(env,t),getDARTFundamentals(env,t)]);
-   if(q.ok&&f.ok){const x={...d,...q.data,...f.data};return {ticker:t,name:x.name,mode:"live",price:x.price,...score(x)};}
- }
- if(!d)return {ticker:t,mode:"demo",score:0,decision:"실제 데이터 연결 대기"};
- return {ticker:t,name:d.name,mode:"demo",price:d.price,...score(d)};
+const J=(x,s=200)=>new Response(JSON.stringify(x),{
+  status:s,
+  headers:{
+    "content-type":"application/json;charset=UTF-8",
+    "cache-control":"no-store"
+  }
+});
+
+async function analyzeTicker(ticker,env){
+  const demo=getDemo(ticker);
+
+  if(env.APP_MODE==="live" && env.KRX_API_KEY && env.DART_API_KEY){
+    const [q,f]=await Promise.all([
+      getKRXQuote(env,ticker),
+      getDARTFundamentals(env,ticker)
+    ]);
+
+    if(q.ok && f.ok){
+      const merged={...demo,...q.data,...f.data};
+      return {
+        ticker,
+        name:merged.name,
+        market:merged.market,
+        sector:merged.sector,
+        price:merged.price,
+        mode:"live",
+        version:env.APP_VERSION||"3.0.0",
+        ...analyzeDetailed(merged)
+      };
+    }
+  }
+
+  if(!demo){
+    return {
+      ticker,
+      name:"미연결 종목",
+      mode:"demo",
+      version:env.APP_VERSION||"3.0.0",
+      score:0,
+      decision:"실데이터 연결 대기",
+      message:"현재 DEMO 데이터셋에 없는 종목입니다. KRX/DART 실데이터 연결 후 분석할 수 있습니다."
+    };
+  }
+
+  return {
+    ticker,
+    name:`${demo.name} DEMO`,
+    market:demo.market,
+    sector:demo.sector,
+    price:demo.price,
+    mode:"demo",
+    version:env.APP_VERSION||"3.0.0",
+    ...analyzeDetailed(demo)
+  };
 }
-export default {async fetch(req,env){
- const u=new URL(req.url);
- try{
-  if(u.pathname==="/api/health")return J({ok:true,service:"K-PARK",mode:env.APP_MODE||"demo"});
-  if(u.pathname==="/api/providers")return J({krx_configured:!!env.KRX_API_KEY,dart_configured:!!env.DART_API_KEY,live_enabled:env.APP_MODE==="live"});
-  let m=u.pathname.match(/^\/api\/analyze\/(\d{6})$/);
-  if(m)return J(await analyze(m[1],env));
-  if(u.pathname==="/api/top10"){let a=[];for(const t of all())a.push(await analyze(t,env));a.sort((x,y)=>(y.score||0)-(x.score||0));return J(a);}
-  return env.ASSETS?env.ASSETS.fetch(req):new Response("K-PARK");
- }catch(e){return J({ok:false,error:e.message},500);}
-}};
+
+export default {
+ async fetch(req,env){
+  const u=new URL(req.url);
+
+  try{
+   if(u.pathname==="/api/health"){
+     return J({ok:true,service:"K-PARK",version:env.APP_VERSION||"3.0.0",mode:env.APP_MODE||"demo"});
+   }
+
+   if(u.pathname==="/api/providers"){
+     return J({
+       ok:true,
+       version:env.APP_VERSION||"3.0.0",
+       krx_configured:!!env.KRX_API_KEY,
+       dart_configured:!!env.DART_API_KEY,
+       live_enabled:env.APP_MODE==="live"
+     });
+   }
+
+   const m=u.pathname.match(/^\/api\/analyze\/(\d{6})$/);
+   if(m){
+     return J(await analyzeTicker(m[1],env));
+   }
+
+   if(u.pathname==="/api/top10"){
+     const rows=[];
+     for(const t of allDemoTickers()){
+       rows.push(await analyzeTicker(t,env));
+     }
+     rows.sort((a,b)=>(b.score||0)-(a.score||0));
+     return J(rows.slice(0,10).map(x=>({
+       ticker:x.ticker,name:x.name,score:x.score,decision:x.decision,
+       price:x.price,mode:x.mode,upside_pct:x.valuation?.upside_pct
+     })));
+   }
+
+   return env.ASSETS ? env.ASSETS.fetch(req) : new Response("K-PARK 3.0");
+  }catch(e){
+   return J({ok:false,error:e.message},500);
+  }
+ }
+};
