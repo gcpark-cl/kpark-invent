@@ -1,0 +1,15 @@
+name = "kpark"
+main = "src/index.js"
+compatibility_date = "2026-08-23"
+
+[assets]
+directory = "../frontend"
+
+[vars]
+APP_MODE = "demo"
+
+# 배포 전 D1 database_id를 실제 값으로 추가하세요.
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "kpark"
+# database_id = "YOUR_D1_ID"

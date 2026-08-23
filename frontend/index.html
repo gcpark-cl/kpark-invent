@@ -1,0 +1,19 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827"><link rel="manifest" href="/manifest.webmanifest"><title>K-PARK</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f7;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:760px;margin:auto;padding-bottom:40px}.hero{background:#111827;color:#fff;padding:24px 18px;border-radius:0 0 22px 22px}.hero h1{margin:0;font-size:29px}.hero p{margin:6px 0;color:#cbd5e1}
+.card{background:#fff;margin:14px;border-radius:18px;padding:17px;box-shadow:0 3px 14px #0001}input,button{width:100%;min-height:49px;border-radius:12px;border:1px solid #d1d5db;font-size:16px;padding:10px 13px}button{background:#111827;color:#fff;border:0;font-weight:700;margin-top:9px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{background:#f8fafc;border-radius:14px;padding:14px}.label{font-size:12px;color:#64748b}.value{font-size:22px;font-weight:800}.score{font-size:38px;font-weight:900}.row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #eee}.muted{font-size:13px;color:#64748b}
+</style></head><body><main><header class="hero"><h1>K-PARK</h1><p>주식 젬뱅이도 쉽게 보는 투자분석</p></header>
+<section class="card"><h2>종목 분석</h2><input id="ticker" inputmode="numeric" maxlength="6" placeholder="예: 005930"><button id="go">분석하기</button><p id="status" class="muted"></p></section>
+<section class="card"><button id="top">오늘의 TOP 10</button><button id="state">데이터 연결 상태</button></section><section id="result" class="card"><h3>사용법</h3><p>종목코드 6자리를 입력하세요.</p></section></main>
+<script>
+const $=x=>document.getElementById(x),won=n=>Number(n||0).toLocaleString()+"원";
+async function api(p){let r=await fetch(p);if(!r.ok)throw Error();return r.json()}
+$("go").onclick=async()=>{let t=$("ticker").value.trim();if(!/^\d{6}$/.test(t)){ $("status").textContent="6자리 종목코드를 입력하세요.";return}
+$("status").textContent="분석 중...";try{let d=await api("/api/analyze/"+t);render(d);$("status").textContent=d.mode==="live"?"실제 데이터":"DEMO 데이터"}catch(e){$("status").textContent="서버 연결 실패"}};
+function render(d){$("result").innerHTML=`<h2>${d.name||d.ticker}</h2><div class="grid"><div class="metric"><div class="label">K-PARK SCORE</div><div class="score">${d.score}</div></div><div class="metric"><div class="label">현재가</div><div class="value">${won(d.price)}</div></div></div><h3>${d.decision}</h3><div class="row"><span>적정가치</span><b>${won(d.fair_value)}</b></div><div class="row"><span>1차</span><b>${won(d.buy1)}</b></div><div class="row"><span>2차</span><b>${won(d.buy2)}</b></div><div class="row"><span>3차</span><b>${won(d.buy3)}</b></div><h3>반대논리</h3><p>${(d.counter_case||[]).join("<br>")}</p><p class="muted">데이터 모드: ${d.mode}</p>`}
+$("top").onclick=async()=>{try{let a=await api("/api/top10");$("result").innerHTML="<h2>TOP 10</h2>"+a.map((x,i)=>`<div class="row"><span>${i+1}. ${x.name||x.ticker}</span><b>${x.score}</b></div>`).join("")}catch(e){$("status").textContent="서버 연결 실패"}};
+$("state").onclick=async()=>{try{let d=await api("/api/providers");$("result").innerHTML=`<h2>데이터 상태</h2><div class="row"><span>KRX 키</span><b>${d.krx_configured?"등록됨":"대기"}</b></div><div class="row"><span>DART 키</span><b>${d.dart_configured?"등록됨":"대기"}</b></div><div class="row"><span>실데이터</span><b>${d.live_enabled?"ON":"OFF"}</b></div>`}catch(e){$("status").textContent="서버 연결 실패"}};
+</script></body></html>
