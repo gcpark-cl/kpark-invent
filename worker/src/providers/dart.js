@@ -59,7 +59,8 @@ async function fetchFinancials(apiKey, corpCode, year, fsDiv) {
   });
 
   const res = await fetch(
-    `https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?${qs.toString()}`
+    `https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?${qs.toString()}`,
+    { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" }, redirect: "manual" }
   );
 
   if (!res.ok) {
