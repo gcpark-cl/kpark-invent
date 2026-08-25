@@ -78,7 +78,9 @@ export default {
      });
    }
 
-    if(u.pathname==="/api/dart-key-test"){ const r=await fetch(`https://opendart.fss.or.kr/api/company.json?crtfc_key=${encodeURIComponent(env.DART_API_KEY)}&corp_code=00126380`); return new Response(await r.text(),{headers:{"content-type":"application/json;charset=UTF-8"}}); }
+    if(u.pathname==="/api/dart-key-test"){ const url=`https://opendart.fss.or.kr/api/company.json?crtfc_key=${encodeURIComponent(env.DART_API_KEY)}&corp_code=00126380`; const r=await fetch(url,{redirect:"manual",headers:{"User-Agent":"Mozilla/5.0","Accept":"application/json,text/plain,*/*"}}); return J({ok:r.ok,status:r.status,location:r.headers.get("location"),body:(await r.text()).slice(0,200)}); }
+      if(u.pathname==="/api/dart-simple-test"){ const q=new URLSearchParams({crtfc_key:env.DART_API_KEY,corp_code:"00126380",bsns_year:"2024",reprt_code:"11011"}); const r=await fetch("https://opendart.fss.or.kr/api/fnlttSinglAcnt.json?"+q.toString(),{redirect:"manual"}); return J({ok:r.ok,status:r.status,location:r.headers.get("location"),body:(await r.text()).slice(0,300)}); } 
+      if(u.pathname==="/api/dart-fin-test"){ const q=new URLSearchParams({crtfc_key:env.DART_API_KEY,corp_code:"00126380",bsns_year:"2024",reprt_code:"11011",fs_div:"CFS"}); const r=await fetch("https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?"+q.toString(),{redirect:"manual"}); return J({ok:r.ok,status:r.status,location:r.headers.get("location"),body:(await r.text()).slice(0,300)}); } 
       if(u.pathname==="/api/dart-test"){ return J(await getDARTFundamentals(env,u.searchParams.get("ticker")||"005930")); }
    const m=u.pathname.match(/^\/api\/analyze\/(\d{6})$/);
    if(m){

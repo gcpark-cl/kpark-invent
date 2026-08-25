@@ -1,4 +1,5 @@
 import { unzipSync } from "fflate";
+import corpMapData from "../data/dart-corp-map.json" with { type: "json" };
 
 let corpMapPromise = null;
 
@@ -45,46 +46,7 @@ function amount(rows, names, field = "thstrm_amount", sj = null) {
 }
 
 async function getCorpMap(apiKey) {
-  if (corpMapPromise) return corpMapPromise;
-
-  corpMapPromise = (async () => {
-    const res = await fetch(
-      `https://opendart.fss.or.kr/api/corpCode.xml?crtfc_key=${encodeURIComponent(apiKey)}`
-    );
-
-    if (!res.ok) {
-      throw new Error(`DART corpCode HTTP ${res.status}`);
-    }
-
-    const zipBytes = new Uint8Array(await res.arrayBuffer());
-    const files = unzipSync(zipBytes);
-    const firstFile = Object.values(files)[0];
-
-    if (!firstFile) {
-      throw new Error("DART corpCode ZIP is empty");
-    }
-
-    const xml = new TextDecoder("utf-8").decode(firstFile);
-    const map = new Map();
-    const re = /<list>([\s\S]*?)<\/list>/g;
-
-    let m;
-    while ((m = re.exec(xml)) !== null) {
-      const block = m[1];
-      const corp = block.match(/<corp_code>(.*?)<\/corp_code>/);
-      const stock = block.match(/<stock_code>(.*?)<\/stock_code>/);
-
-      if (corp && stock) {
-        const stockCode = stock[1].trim();
-        const corpCode = corp[1].trim();
-        if (stockCode) map.set(stockCode, corpCode);
-      }
-    }
-
-    return map;
-  })();
-
-  return corpMapPromise;
+  return new Map(Object.entries(corpMapData));
 }
 
 async function fetchFinancials(apiKey, corpCode, year, fsDiv) {
