@@ -97,6 +97,16 @@ function render(d){
   <div class="metric"><div class="label">현재가</div><div class="value">${won(d.price)}</div></div>
  </div>
  <h2>${d.decision}</h2>
+<div class="grid2">
+<div class="metric"><div class="label">기준 적정가</div><div class="value">${won(v.base)}</div></div>
+<div class="metric"><div class="label">상승여력</div><div class="value">${pct(v.upside_pct)}</div></div>
+</div>
+<div class="section-title">🎯 K-PARK 분할매수 가격</div>
+<div class="grid3">
+<div class="metric"><div class="label">1차 · 30%</div><div class="value">${won(o.buy1)}</div></div>
+<div class="metric"><div class="label">2차 · 30%</div><div class="value">${won(o.buy2)}</div></div>
+<div class="metric"><div class="label">3차 · 40%</div><div class="value">${won(o.buy3)}</div></div>
+</div>
  <div class="notice">${d.beginner_summary}</div>
 
  <div class="section-title">① 6대 핵심점수</div>
