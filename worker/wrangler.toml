@@ -6,7 +6,7 @@ compatibility_date = "2026-08-23"
 directory = "../frontend"
 
 [vars]
-APP_MODE = "demo"
+APP_MODE = "live"
 APP_VERSION = "3.0.0"
 
 # D1을 사용할 때 아래 주석을 해제하고 실제 database_id를 넣으세요.

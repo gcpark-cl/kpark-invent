@@ -78,10 +78,13 @@ export default {
      });
    }
 
+    if(u.pathname==="/api/dart-key-test"){ const r=await fetch(`https://opendart.fss.or.kr/api/company.json?crtfc_key=${encodeURIComponent(env.DART_API_KEY)}&corp_code=00126380`); return new Response(await r.text(),{headers:{"content-type":"application/json;charset=UTF-8"}}); }
+      if(u.pathname==="/api/dart-test"){ return J(await getDARTFundamentals(env,u.searchParams.get("ticker")||"005930")); }
    const m=u.pathname.match(/^\/api\/analyze\/(\d{6})$/);
    if(m){
      return J(await analyzeTicker(m[1],env));
    }
+    if(u.pathname==="/api/krx-test"){ return J(await getKRXQuote(env,u.searchParams.get("basDd"))); }
 
    if(u.pathname==="/api/top10"){
      const rows=[];
