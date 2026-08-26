@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="/manifest.webmanifest">
+<title>K-PARK 3.0</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f5f9;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:820px;margin:auto;padding-bottom:46px}
+.hero{background:#0f172a;color:#fff;padding:26px 20px 24px;border-radius:0 0 24px 24px}
+.hero h1{margin:0;font-size:30px}.hero p{margin:7px 0 0;color:#cbd5e1}.badge{display:inline-block;margin-top:10px;padding:5px 9px;border-radius:999px;background:#1e293b;font-size:12px}
+.card{background:#fff;margin:14px;border-radius:20px;padding:18px;box-shadow:0 4px 16px #0f172a12}
+input,button{width:100%;min-height:50px;border-radius:13px;border:1px solid #cbd5e1;font-size:16px;padding:11px 13px}
+button{background:#0f172a;color:#fff;border:0;font-weight:750;margin-top:9px}
+button.secondary{background:#334155}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.metric{background:#f8fafc;border-radius:15px;padding:14px}
+.label{font-size:12px;color:#64748b}.big{font-size:34px;font-weight:900}.value{font-size:20px;font-weight:800;margin-top:4px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #edf2f7}
+.row:last-child{border-bottom:0}.muted{font-size:13px;color:#64748b}
+.section-title{font-size:18px;font-weight:850;margin:18px 0 10px}
+.factor{margin:10px 0}.factor-head{display:flex;justify-content:space-between;font-weight:750}.bar{height:9px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin:7px 0}.bar>span{display:block;height:100%;background:#0f172a;border-radius:999px}
+.chip{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef2ff;margin:3px 4px 3px 0;font-size:12px}
+.notice{background:#fffbeb;border-radius:14px;padding:13px;font-size:13px;line-height:1.55}
+.good{background:#f0fdf4}.risk{background:#fff7ed}.list{margin:8px 0;padding-left:20px;line-height:1.65}
+details{border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin:9px 0;background:#fff}
+summary{font-weight:800;cursor:pointer}
+.toprow{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #edf2f7}
+.status-ok{font-weight:800}.mode-demo{color:#b45309}.mode-live{color:#047857}
+@media(max-width:520px){.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr 1fr}.hero h1{font-size:27px}}
+</style>
+</head>
+<body>
+<main>
+<header class="hero">
+  <h1>K-PARK 3.0</h1>
+  <p>초보자도 이해하는 상세 주식분석</p>
+  <span class="badge">상세분석형 · FREE</span>
+</header>
+
+<section class="card">
+  <h2>종목 분석</h2>
+  <input id="ticker" inputmode="numeric" maxlength="6" placeholder="종목코드 6자리 예: 005930">
+  <button id="analyze">상세 분석하기</button>
+  <p id="status" class="muted"></p>
+</section>
+
+<section class="card">
+  <button id="top">오늘의 TOP 10</button>
+  <button id="provider" class="secondary">데이터 연결 상태</button>
+</section>
+
+<section id="result" class="card">
+  <h3>사용법</h3>
+  <p>종목코드 6자리를 입력하면 K-PARK 3.0 상세분석이 표시됩니다.</p>
+  <p class="muted">API 키가 없을 때는 DEMO 데이터로 동작합니다.</p>
+</section>
+</main>
+
+<script>
+const $=x=>document.getElementById(x);
+const won=n=>Number(n||0).toLocaleString()+"원";
+const pct=n=>`${Number(n||0).toFixed(1)}%`;
+const large=n=>{
+  n=Number(n||0);
+  if(Math.abs(n)>=1e12)return (n/1e12).toFixed(1)+"조";
+  if(Math.abs(n)>=1e8)return (n/1e8).toFixed(0)+"억";
+  return n.toLocaleString();
+};
+async function api(p){
+  const r=await fetch(p,{cache:"no-store"});
+  if(!r.ok)throw Error(`HTTP ${r.status}`);
+  return r.json();
+}
+function factorHTML(f){
+  return `<div class="factor">
+    <div class="factor-head"><span>${f.name} · ${f.grade}</span><span>${f.score}</span></div>
+    <div class="bar"><span style="width:${Math.max(0,Math.min(100,f.score))}%"></span></div>
+    <div class="muted">${f.explain}</div>
+  </div>`;
+}
+function render(d){
+ if(d.score===0){
+   $("result").innerHTML=`<h2>${d.ticker}</h2><p>${d.message||d.decision}</p><p class="muted">mode: ${d.mode}</p>`;
+   return;
+ }
+ const v=d.valuation||{},o=d.opportunities||{},f=d.financials||{};
+ $("result").innerHTML=`
+ <div class="row"><span class="muted">${d.market||""} · ${d.sector||""}</span><b class="${d.mode==="live"?"mode-live":"mode-demo"}">${d.mode.toUpperCase()}</b></div>
+ <h2>${d.name}</h2>
+ <div class="grid2">
+  <div class="metric"><div class="label">K-PARK SCORE</div><div class="big">${d.score}</div></div>
+  <div class="metric"><div class="label">현재가</div><div class="value">${won(d.price)}</div></div>
+ </div>
+ <h2>${d.decision}</h2>
+ <div class="notice">${d.beginner_summary}</div>
+
+ <div class="section-title">① 6대 핵심점수</div>
+ ${(d.factors||[]).map(factorHTML).join("")}
+
+ <div class="section-title">② 밸류에이션</div>
+ <div class="grid3">
+  <div class="metric"><div class="label">PER</div><div class="value">${d.per}배</div></div>
+  <div class="metric"><div class="label">PBR</div><div class="value">${d.pbr}배</div></div>
+  <div class="metric"><div class="label">ROE</div><div class="value">${pct(d.roe)}</div></div>
+ </div>
+ <div class="row"><span>EPS</span><b>${won(d.eps)}</b></div>
+ <div class="row"><span>BPS</span><b>${won(d.bps)}</b></div>
+ <div class="row"><span>배당수익률</span><b>${pct(d.dividend_yield)}</b></div>
+
+ <div class="section-title">③ 적정가치 3가지 시나리오</div>
+ <div class="row"><span>보수적 가치</span><b>${won(v.conservative)}</b></div>
+ <div class="row"><span>기준 적정가치</span><b>${won(v.base)}</b></div>
+ <div class="row"><span>낙관적 가치</span><b>${won(v.optimistic)}</b></div>
+ <div class="row"><span>기준가 대비 상승여력</span><b>${pct(v.upside_pct)}</b></div>
+
+ <div class="section-title">④ 분할매수 전략</div>
+ ${(o.allocation||[]).map(x=>`<div class="row"><span>${x.level} · 비중 ${x.weight}%</span><b>${won(x.price)}</b></div>`).join("")}
+ <p class="muted">분할매수 비중은 예시이며 개인 자금·위험성향에 맞게 조정해야 합니다.</p>
+
+ <div class="section-title">⑤ 실적·재무 상세</div>
+ <div class="row"><span>매출 성장률</span><b>${pct(f.revenue_growth)}</b></div>
+ <div class="row"><span>이익 성장률</span><b>${pct(f.profit_growth)}</b></div>
+ <div class="row"><span>EPS 성장률</span><b>${pct(f.eps_growth)}</b></div>
+ <div class="row"><span>영업이익률</span><b>${pct(f.operating_margin)}</b></div>
+ <div class="row"><span>순이익률</span><b>${pct(f.net_margin)}</b></div>
+ <div class="row"><span>부채비율</span><b>${pct(f.debt_ratio)}</b></div>
+ <div class="row"><span>현금성 비율</span><b>${pct(f.cash_ratio)}</b></div>
+ <div class="row"><span>영업현금흐름</span><b>${large(f.operating_cashflow)}</b></div>
+ <div class="row"><span>잉여현금흐름 FCF</span><b>${large(f.free_cashflow)}</b></div>
+
+ <details open><summary>⑥ 핵심 장점</summary><div class="notice good"><ul class="list">${(d.strengths||[]).map(x=>`<li>${x}</li>`).join("")}</ul></div></details>
+ <details open><summary>⑦ 핵심 위험</summary><div class="notice risk"><ul class="list">${(d.risks||[]).map(x=>`<li>${x}</li>`).join("")}</ul></div></details>
+ <details><summary>⑧ 반대논리</summary><ul class="list">${(d.counter_case||[]).map(x=>`<li>${x}</li>`).join("")}</ul></details>
+ <details><summary>⑨ 판단이 틀렸다고 봐야 할 조건</summary><ul class="list">${(d.invalidation||[]).map(x=>`<li>${x}</li>`).join("")}</ul></details>
+
+ <div class="notice" style="margin-top:16px">K-PARK 점수와 적정가치는 투자 참고용 모델입니다. 실제 투자 전 최신 공시, 시장 가격, 업종 사이클을 확인하세요.</div>
+ <p class="muted">K-PARK ${d.version||"3.0"} · 데이터 모드: ${d.mode}</p>`;
+}
+$("analyze").onclick=async()=>{
+ const t=$("ticker").value.trim();
+ if(!/^\d{6}$/.test(t)){ $("status").textContent="6자리 종목코드를 입력하세요.";return; }
+ $("status").textContent="상세 분석 중...";
+ try{
+  const d=await api("/api/analyze/"+t);
+  render(d);
+  $("status").textContent=d.mode==="live"?"실제 데이터 분석":"DEMO 데이터 분석";
+ }catch(e){
+  $("status").textContent="서버 연결 실패: "+e.message;
+ }
+};
+$("top").onclick=async()=>{
+ try{
+  const a=await api("/api/top10");
+  $("result").innerHTML="<h2>오늘의 TOP 10</h2>"+a.map((x,i)=>`<div class="toprow"><span><b>${i+1}. ${x.name}</b><br><span class="muted">${x.ticker} · ${x.decision} · ${x.mode}</span></span><span><b>${x.score}</b><br><span class="muted">${x.upside_pct==null?"":pct(x.upside_pct)}</span></span></div>`).join("");
+ }catch(e){$("status").textContent="서버 연결 실패: "+e.message}
+};
+$("provider").onclick=async()=>{
+ try{
+  const d=await api("/api/providers");
+  $("result").innerHTML=`<h2>데이터 연결 상태</h2>
+   <div class="row"><span>K-PARK 버전</span><b>${d.version}</b></div>
+   <div class="row"><span>KRX 키</span><b>${d.krx_configured?"등록됨":"대기"}</b></div>
+   <div class="row"><span>DART 키</span><b>${d.dart_configured?"등록됨":"대기"}</b></div>
+   <div class="row"><span>실데이터</span><b>${d.live_enabled?"ON":"OFF"}</b></div>`;
+ }catch(e){$("status").textContent="서버 연결 실패: "+e.message}
+};
+if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(()=>{});}
+</script>
+</body>
+</html>
