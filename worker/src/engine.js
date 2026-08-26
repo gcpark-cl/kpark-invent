@@ -19,9 +19,9 @@ function valueScore(d, per, pbr){
 
 function growthScore(d){
   return clamp(
-    clamp((d.revenue_growth+5)/25*100)*.30 +
-    clamp((d.profit_growth+5)/30*100)*.35 +
-    clamp((d.eps_growth+5)/30*100)*.35
+    clamp(((Number(d.revenue_growth)||0)+5)/25*100)*.30 +
+    clamp(((Number(d.profit_growth)||0)+5)/30*100)*.35 +
+    clamp(((Number(d.eps_growth)||0)+5)/30*100)*.35
   );
 }
 
