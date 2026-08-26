@@ -9,8 +9,8 @@ directory = "../frontend"
 APP_MODE = "live"
 APP_VERSION = "3.0.0"
 
-# D1을 사용할 때 아래 주석을 해제하고 실제 database_id를 넣으세요.
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "kpark"
-# database_id = "YOUR_D1_ID"
+# D1???�용?????�래 주석???�제?�고 ?�제 database_id�??�으?�요.
+[[d1_databases]]
+binding = "DB"
+database_name = "kpark"
+database_id = "ddac912c-24f2-4e09-977d-7d41b2b63bcf"

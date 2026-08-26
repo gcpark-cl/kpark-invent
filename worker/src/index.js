@@ -1,6 +1,7 @@
 import {getDemo, allDemoTickers} from "./demo.js";
 import {analyzeDetailed} from "./engine.js";
 import {getKRXQuote} from "./providers/krx.js";
+import {getKiwoomQuote} from "./providers/kiwoom.js";
 import {getDARTFundamentals} from "./providers/dart.js";
 
 const J=(x,s=200)=>new Response(JSON.stringify(x),{
@@ -10,18 +11,70 @@ const J=(x,s=200)=>new Response(JSON.stringify(x),{
     "cache-control":"no-store"
   }
 });
+async function getKiwoomRelayQuote(env, ticker) {
+  if (!env.KIWOOM_RELAY_URL || !env.KPARK_RELAY_SECRET) {
+    return { ok: false, reason: "KIWOOM relay config missing" };
+  }
 
+  try {
+    const url =
+      env.KIWOOM_RELAY_URL.replace(/\/$/, "") +
+      "/quote?code=" +
+      encodeURIComponent(ticker);
+
+    const r = await fetch(url, {
+      headers: {
+        "x-kpark-relay-secret": env.KPARK_RELAY_SECRET
+      }
+    });
+
+    const data = await r.json();
+
+    if (!r.ok || !data.ok) {
+      return {
+        ok: false,
+        reason: data.error || `HTTP ${r.status}`
+      };
+    }
+
+    return {
+      ok: true,
+      data: {
+        ticker: data.ticker,
+        name: data.name,
+        price: Number(data.price || 0),
+        change: Number(data.change || 0),
+        change_rate: Number(data.change_rate || 0),
+        open: Number(data.open || 0),
+        high: Number(data.high || 0),
+        low: Number(data.low || 0),
+        volume: Number(data.volume || 0),
+        source: "KIWOOM"
+      }
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      reason: e?.message || String(e)
+    };
+  }
+}
 async function analyzeTicker(ticker,env){
-  const demo=getDemo(ticker);
+const demo=getDemo(ticker);
 
-  if(env.APP_MODE==="live" && env.KRX_API_KEY && env.DART_API_KEY){
-    const [q,f]=await Promise.all([
-      getKRXQuote(env,ticker),
-      getDARTFundamentals(env,ticker)
-    ]);
-
-    if(q.ok && f.ok){
-      const merged={...demo,...q.data,...f.data};
+if(env.APP_MODE==="live" && env.KRX_API_KEY && env.DART_API_KEY){
+  const [k,q,f]=await Promise.all([
+    getKiwoomRelayQuote(env,ticker),
+    getKRXQuote(env,ticker),
+    getDARTFundamentals(env,ticker)
+  ]);
+   if(q.ok && f.ok){
+  const merged={
+    ...demo,
+    ...q.data,
+    ...f.data,
+    ...(k.ok ? k.data : {})
+  };
       return {
         ticker,
         name:merged.name,
