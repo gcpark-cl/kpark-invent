@@ -65,14 +65,14 @@ jobs:
               print("DART RELAY DATA OK", r.read().decode("utf-8")[:300])
           PY
 
-      - name: Start K-PARK Worker
+      - name: Start K-PARK Node bridge
         env:
           DART_API_KEY: ${{ secrets.DART_API_KEY }}
+          DART_RELAY_URL: http://127.0.0.1:8790
         run: |
-          printf "DART_API_KEY=%s\nDART_RELAY_URL=http://127.0.0.1:8790\nKPARK_RELAY_SECRET=%s\n" "$DART_API_KEY" "$KPARK_RELAY_SECRET" > .dev.vars
-          npx wrangler dev --port 8787 > wrangler.log 2>&1 &
-          echo $! > wrangler.pid
-          sleep 8
+          node dart-node-bridge.mjs > node-bridge.log 2>&1 &
+          echo $! > node-bridge.pid
+          sleep 3
 
       - name: Verify cloud pipeline
         run: |
