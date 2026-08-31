@@ -44,6 +44,14 @@ jobs:
           echo $! > dart-relay.pid
           sleep 3
 
+      - name: Verify DART relay
+        run: |
+          python - <<'PY'
+          import urllib.request
+          with urllib.request.urlopen("http://127.0.0.1:8790/health", timeout=10) as r:
+              print("DART RELAY HEALTH", r.read().decode("utf-8"))
+          PY
+
       - name: Start K-PARK Worker
         env:
           DART_API_KEY: ${{ secrets.DART_API_KEY }}
