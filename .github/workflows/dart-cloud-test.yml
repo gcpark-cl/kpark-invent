@@ -1,0 +1,50 @@
+﻿name: K-PARK DART Cloud Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dart-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Test OpenDART
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os, json, urllib.parse, urllib.request
+
+          key = os.environ["DART_API_KEY"].strip()
+
+          q = urllib.parse.urlencode({
+              "crtfc_key": key,
+              "corp_code": "00126380"
+          })
+
+          url = "https://opendart.fss.or.kr/api/company.json?" + q
+
+          req = urllib.request.Request(
+              url,
+              headers={"User-Agent": "Mozilla/5.0"}
+          )
+
+          with urllib.request.urlopen(req, timeout=30) as r:
+              data = json.loads(r.read().decode("utf-8"))
+
+          print("STATUS", data.get("status"))
+          print("CORP_NAME", data.get("corp_name"))
+
+          if data.get("status") != "000":
+              raise SystemExit("DART CLOUD TEST FAILED")
+
+          print("K-PARK DART CLOUD TEST OK")
+          PY
