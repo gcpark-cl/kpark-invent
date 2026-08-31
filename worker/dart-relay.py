@@ -9,6 +9,8 @@ PORT = 8790
 
 def load_env(path=".env"):
     data = {}
+    if not os.path.exists(path):
+        return data
     with open(path, "r", encoding="utf-8-sig") as f:
         for line in f:
             line = line.strip()
@@ -19,8 +21,8 @@ def load_env(path=".env"):
     return data
 
 ENV = load_env()
-DART_API_KEY = ENV.get("DART_API_KEY", "")
-RELAY_SECRET = ENV.get("KPARK_RELAY_SECRET", "")
+DART_API_KEY = os.environ.get("DART_API_KEY", ENV.get("DART_API_KEY", "")).strip()
+RELAY_SECRET = os.environ.get("KPARK_RELAY_SECRET", ENV.get("KPARK_RELAY_SECRET", "")).strip()
 
 class Handler(BaseHTTPRequestHandler):
     def send_json(self, status, obj):
