@@ -52,6 +52,19 @@ jobs:
               print("DART RELAY HEALTH", r.read().decode("utf-8"))
           PY
 
+      - name: Verify DART relay data
+        run: |
+          python - <<'PY'
+          import os, urllib.request
+          url = "http://127.0.0.1:8790/company?corp_code=00126380"
+          req = urllib.request.Request(
+              url,
+              headers={"x-kpark-relay-secret": os.environ["KPARK_RELAY_SECRET"]}
+          )
+          with urllib.request.urlopen(req, timeout=30) as r:
+              print("DART RELAY DATA OK", r.read().decode("utf-8")[:300])
+          PY
+
       - name: Start K-PARK Worker
         env:
           DART_API_KEY: ${{ secrets.DART_API_KEY }}
