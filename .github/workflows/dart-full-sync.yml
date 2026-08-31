@@ -47,9 +47,9 @@ jobs:
       - name: Start K-PARK Worker
         env:
           DART_API_KEY: ${{ secrets.DART_API_KEY }}
-          DART_RELAY_URL: http://127.0.0.1:8790
         run: |
-          npx wrangler dev --port 8787 --var "DART_RELAY_URL:http://127.0.0.1:8790" --var "KPARK_RELAY_SECRET:$KPARK_RELAY_SECRET" > wrangler.log 2>&1 &
+          printf "DART_API_KEY=%s\nDART_RELAY_URL=http://127.0.0.1:8790\nKPARK_RELAY_SECRET=%s\n" "$DART_API_KEY" "$KPARK_RELAY_SECRET" > .dev.vars
+          npx wrangler dev --port 8787 > wrangler.log 2>&1 &
           echo $! > wrangler.pid
           sleep 8
 
