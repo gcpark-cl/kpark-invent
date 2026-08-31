@@ -62,6 +62,14 @@ jobs:
               raise SystemExit(data)
           PY
 
+      - name: Show pipeline logs on failure
+        if: failure()
+        run: |
+          echo "===== WRANGLER LOG ====="
+          cat wrangler.log || true
+          echo "===== DART RELAY LOG ====="
+          cat dart-relay.log || true
+
       - name: Sync 2767 DART fundamentals to D1
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
