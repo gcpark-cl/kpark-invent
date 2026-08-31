@@ -26,6 +26,9 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install K-PARK dependencies
+        run: npm install
+
       - name: Install Wrangler
         run: npm install -g wrangler@4
 
