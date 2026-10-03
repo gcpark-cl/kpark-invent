@@ -1,0 +1,28 @@
+﻿name: NHPLUG Token Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install requests
+      - name: Test NHPLUG token issuance
+        env:
+          NHPLUG_APP_KEY: ${{ secrets.NHPLUG_APP_KEY }}
+          NHPLUG_APP_SECRET: ${{ secrets.NHPLUG_APP_SECRET }}
+        run: |
+          python - <<'PY'
+          import os, requests
+          r=requests.post('https://api.nhplug.com:8443/oauth2/token',params={'appkey':os.environ['NHPLUG_APP_KEY'],'appsecretkey':os.environ['NHPLUG_APP_SECRET'],'grant_type':'client_credentials','scope':'oob'},headers={'content-type':'application/x-www-form-urlencoded'})
+          try: d=r.json()
+          except: d={}
+          print('HTTP',r.status_code)
+          print('TOKEN_PRESENT',bool(d.get('access_token')))
+          print('MESSAGE',d.get('rsp_msg') or d.get('message') or '')
+          PY
