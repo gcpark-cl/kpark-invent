@@ -14,3 +14,7 @@ APP_VERSION = "3.0.0"
 binding = "DB"
 database_name = "kpark"
 database_id = "ddac912c-24f2-4e09-977d-7d41b2b63bcf"
+
+[[kv_namespaces]]
+binding = "NHPLUG_TOKEN_KV"
+id = "df65e89d797c433eab608d613a8adb5a"
